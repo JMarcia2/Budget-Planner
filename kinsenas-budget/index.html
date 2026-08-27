@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1117">
+<title>Kinsenas Command — Cebu Relocation Plan</title>
+<meta name="description" content="Offline zero-based kinsenas budget, relocation cash plan, debt payoff tracker and emergency fund planner for a ₱25,000/month income in Cebu City.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Kinsenas <span>Command</span></h1>
+      <div class="sub">Cebu City relocation · ₱25,000/mo · paid ₱12,500 every 15 days · starts Aug 29</div>
+    </div>
+    <div class="badges">
+      <span id="badgeOffline" class="badge off">offline status…</span>
+      <span class="badge">data stored on this device only</span>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="dash" class="active">Dashboard</button>
+    <button data-tab="move">Move-In Plan</button>
+    <button data-tab="budget">Kinsenas Budget</button>
+    <button data-tab="debt">Debt Payoff</button>
+    <button data-tab="ef">Emergency Fund</button>
+    <button data-tab="ledger">Ledger</button>
+    <button data-tab="scripts">Negotiation Scripts</button>
+  </nav>
+
+  <main>
+    <section id="dash" data-pane></section>
+    <section id="move" data-pane hidden></section>
+    <section id="budget" data-pane hidden></section>
+    <section id="debt" data-pane hidden></section>
+    <section id="ef" data-pane hidden></section>
+    <section id="ledger" data-pane hidden></section>
+    <section id="scripts" data-pane hidden></section>
+  </main>
+
+  <div class="hr"></div>
+  <div class="btnrow">
+    <button class="btn ghost sm" id="btnPrint">Print / Save as PDF</button>
+    <button class="btn ghost sm" id="btnExport">Export backup (.json)</button>
+    <button class="btn ghost sm" id="btnImport">Import backup</button>
+    <button class="btn danger sm" id="btnReset">Reset to defaults</button>
+    <input type="file" id="fileImport" accept="application/json" hidden>
+  </div>
+  <p class="dim sm">Nothing here syncs anywhere. Every number you type is saved in this browser's local storage, so it works with no signal, no data, no login. Interest rates shown are reference figures verified against published rate tables as of 15 July 2026 — confirm in the bank's own app before you deposit.</p>
+</div>
+
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>

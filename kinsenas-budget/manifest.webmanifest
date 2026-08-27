@@ -1,0 +1,14 @@
+{
+  "name": "Kinsenas Command — Cebu Relocation Budget",
+  "short_name": "Kinsenas",
+  "description": "Offline zero-based kinsenas budget, relocation cash plan, debt payoff tracker and emergency fund planner for a ₱25,000/month income in Cebu City.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1117",
+  "theme_color": "#0b1117",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
