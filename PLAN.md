@@ -200,31 +200,34 @@ Ranked by likelihood, with the response pre-decided so you don't have to think i
 
 ## Using the app offline
 
-Two builds, same app and same data model. No server, no account, no network calls.
+One file, the whole app. No server, no account, no network calls.
 
-**1. `Kinsenas-Budget-standalone.html` — one file, easiest option.**
-Everything (markup, styles, logic) is inlined into a single 65 KB HTML file. Email it to yourself,
-save it to your phone's storage, or keep it in Drive — then just open it. Nothing to install, no
-hosting. This is the version to use on your phone.
+**`index.html` — the entire app in a single 67 KB file.**
+Markup, styles, logic and even the icon are inlined; the file has zero external
+references. Email it to yourself, save it to your phone's storage, or keep it in
+Drive — then just open it in any browser. Nothing to install, no hosting needed.
+To put it online (GitHub Pages, Netlify Drop), upload that one file and you're live.
 
-**2. `kinsenas-budget/` — the installable PWA version.**
-Six files with a service worker and manifest. Host it once (Netlify Drop or GitHub Pages both take
-a folder drag-and-drop), open it online one time, then **Add to Home Screen**. The service worker
-caches all six assets, so afterwards it launches offline like a native app.
+The app used to ship as two builds (this single file plus a six-file PWA folder with
+a service worker). The multi-file version broke when `index.html` was deleted, so the
+orphaned sources (`app.js`, `styles.css`, `sw.js`, `manifest.webmanifest`, `icon.svg`,
+`build-standalone.js`) were removed. The newest build — with the paid-item **undo**
+buttons and the live per-keystroke editing registry — is now the one and only app.
 
 **Your data** lives in that browser's local storage on that device only — nothing syncs anywhere.
 Use **Export backup** before clearing browser data, and **Import backup** to move between devices.
 Note that localStorage on a `file://` page is per-browser and can be cleared with browser data, so
 export a backup occasionally.
 
-Both builds pass the same 30-assertion test suite (`verify-app.js`).
+### Testing changes
 
-### Rebuilding the standalone file
-
-If you edit the PWA version, regenerate the single-file build with:
+The app passes a 67-assertion test suite covering every tab, the zero-based presets,
+the forecast math, undo, live editing and single-file integrity:
 
 ```
-node build-standalone.js
+npm install
+npm test
 ```
 
-Everything is editable. The presets are a starting point, not a rule.
+Everything is editable — open `index.html` in a text editor; markup, styles and logic
+are all in that one file. The presets are a starting point, not a rule.
