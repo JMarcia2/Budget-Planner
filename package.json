@@ -1,0 +1,12 @@
+{
+  "name": "kinsenas-budget",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Kinsenas Command — offline zero-based kinsenas budget, relocation cash plan, debt payoff tracker and emergency fund planner. One self-contained HTML file.",
+  "scripts": {
+    "test": "node verify-app.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}

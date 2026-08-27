@@ -1,8 +1,19 @@
-const fs = require('fs'), path = require('path');
+/* Kinsenas Command test suite — runs the 30+ assertions against the single-file app.
+ * Usage:  npm install   then   node verify-app.js
+ * The app is one self-contained index.html; this loads it in jsdom and executes
+ * its inline script, then pokes every tab, field and button. */
+const fs = require('fs');
 const { JSDOM } = require('jsdom');
-const dir = '/home/user/kinsenas-budget';
-const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
-const dom = new JSDOM(html, { runScripts: 'outside-only', url: 'http://localhost/' });
+
+const html = fs.readFileSync(path0(), 'utf8');
+function path0() {
+  // allow `node verify-app.js [file]`, default to index.html next to this script
+  const arg = process.argv[2];
+  if (arg) return require('path').resolve(arg);
+  return require('path').join(__dirname, 'index.html');
+}
+
+const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'http://localhost/' });
 const w = dom.window;
 w.scrollTo = () => {};                       // jsdom does not implement scrolling
 if (!w.localStorage) {
@@ -12,15 +23,16 @@ if (!w.localStorage) {
 
 const errors = [];
 w.onerror = m => errors.push('onerror: ' + m);
-console.error = (...a) => { const s = a.join(' '); if (!/Not implemented/.test(s)) errors.push('console.error: ' + s); };
+const origErr = w.console.error;
+w.console.error = (...a) => { const s = a.join(' '); if (!/Not implemented/.test(s)) errors.push('console.error: ' + s); };
 
-let code = fs.readFileSync(path.join(dir, 'app.js'), 'utf8');
-code += '\n;window.__api={' +
-  'renderDash,renderMove,renderBudget,renderDebt,renderEF,renderLedger,renderScripts,' +
-  'forecast,moveEffective,cashNow,livingCost,waterfallRows,budgetTotals,debtTotals,' +
-  'monthsToTarget,projectEF,defaults,PRESETS,PERIODS,MILESTONES,' +
-  'get S(){return S},set S(v){S=v}};';
-try { w.eval(code); } catch (e) { console.log('FATAL during eval:', e.message); process.exit(1); }
+if (!w.renderDash) { console.log('FATAL: app script did not run inside the page (no renderDash found).'); process.exit(1); }
+
+// expose internals for assertions
+w.eval(`;window.__api={renderDash,renderMove,renderBudget,renderDebt,renderEF,renderLedger,renderScripts,
+  forecast,moveEffective,cashNow,livingCost,waterfallRows,budgetTotals,debtTotals,
+  monthsToTarget,projectEF,defaults,PRESETS,PERIODS,MILESTONES,
+  get S(){return S},set S(v){S=v}};`);
 
 const A = w.__api, d = w.document;
 let pass = 0, fail = 0;
@@ -170,7 +182,7 @@ chk('debt paid edit updates total live', A.debtTotals().paid === 2000, 'paid=' +
 /* ---------- 10. every registry key has a live element ---------- */
 console.log('\n=== field registry coverage ===');
 A.S = A.defaults(); A.renderDash(); A.renderMove(); A.renderBudget(); A.renderDebt(); A.renderEF();
-for (const k of ['mamt','bamt','bname','bnote','dpaid','income','efm','eft','efe','efr','scenamt']) {
+for (const k of ['mamt', 'bamt', 'bname', 'bnote', 'dpaid', 'income', 'efm', 'eft', 'efe', 'efr', 'scenamt']) {
   chk('field "' + k + '" is present in the DOM', d.querySelector('[data-' + k + ']') !== null);
 }
 
@@ -185,6 +197,14 @@ A.renderDash();
 chk('ledger EF entry reaches the dashboard', /₱1,250/.test(d.getElementById('dash').textContent));
 A.S.budget[2].amt = 1000;
 chk('budget edit breaks zero-based balance', A.budgetTotals().un === 1900, 'un=' + A.budgetTotals().un);
+
+/* ---------- 12. self-containment: the single file stands alone ---------- */
+console.log('\n=== single-file integrity ===');
+const raw = fs.readFileSync(path0(), 'utf8');
+chk('no external stylesheets', !/<link[^>]+rel="stylesheet"/.test(raw));
+chk('no external scripts', !/<script[^>]+src=/.test(raw));
+chk('no external images or icons', !/(?:href|src)="(?!data:|#)[^"]+"/.test(raw));
+chk('no service-worker registration (file:// safe)', !/serviceWorker/.test(raw));
 
 console.log('\n=== ' + pass + ' passed, ' + fail + ' failed ===');
 console.log('runtime errors: ' + (errors.length ? errors.slice(0, 4).join(' | ') : 'none'));
