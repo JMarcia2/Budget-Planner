@@ -1,4 +1,4 @@
-/* Kinsenas Command test suite — runs the 30+ assertions against the single-file app.
+/* Kinsenas Command test suite — runs 87 assertions against the single-file app.
  * Usage:  npm install   then   node verify-app.js
  * The app is one self-contained index.html; this loads it in jsdom and executes
  * its inline script, then pokes every tab, field and button. */
@@ -13,9 +13,10 @@ function path0() {
   return require('path').join(__dirname, 'index.html');
 }
 
-const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'http://localhost/' });
+const dom = new JSDOM(html, { runScripts: 'dangerously', url: 'http://localhost/',
+  beforeParse(window) { window.scrollTo = () => {}; } });  // jsdom has no scrolling
 const w = dom.window;
-w.scrollTo = () => {};                       // jsdom does not implement scrolling
+w.scrollTo = () => {};
 if (!w.localStorage) {
   const store = {};
   w.localStorage = { getItem: k => k in store ? store[k] : null, setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } };
@@ -135,6 +136,36 @@ chk('move-in tab also offers undo', /undo/i.test(mvUndo.textContent));
 mvUndo.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
 chk('move-in undo round-trips', A.cashNow().paid === 0);
 
+/* ---------- 8b. UNDO a budget (and ledger) ✕ delete ---------- */
+console.log('\n=== undo a ✕ delete ===');
+A.S = A.defaults(); A.renderBudget(); A.renderLedger();
+const beforeTotals = A.budgetTotals();
+const cat2 = A.S.budget[2];
+let delBtn = d.querySelector('[data-bdel="' + cat2.id + '"]');
+chk('budget exposes a delete (✕) button', !!delBtn);
+delBtn.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+chk('✕ removes the category', !A.S.budget.find(b => b.id === cat2.id));
+chk('✕ updates the total instantly', A.budgetTotals().alloc === beforeTotals.alloc - cat2.amt,
+  beforeTotals.alloc + ' -> ' + A.budgetTotals().alloc);
+const bar = d.getElementById('undoBar');
+chk('undo snackbar appears after ✕', !!bar && bar.classList.contains('show'));
+chk('snackbar names what was deleted', /Deleted/.test(d.getElementById('undoLabel').textContent));
+d.getElementById('undoBtn').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+const back = A.S.budget.find(b => b.id === cat2.id);
+chk('undo restores the category', !!back);
+chk('undo restores the original index', back && A.S.budget.indexOf(back) === 2, 'idx=' + (back ? A.S.budget.indexOf(back) : 'gone'));
+chk('undo restores the total', A.budgetTotals().alloc === beforeTotals.alloc, 'alloc=' + A.budgetTotals().alloc);
+chk('snackbar hides after undo', !bar.classList.contains('show'));
+// the ledger also has undoable ✕ buttons
+A.S.ledger.push({ id: 'u-demo', date: '2026-09-01', type: 'out', cat: 'Food', amt: 500, note: 'undo test' });
+A.renderLedger();
+delBtn = d.querySelector('[data-ldel="u-demo"]');
+chk('ledger exposes a delete (✕) button', !!delBtn);
+delBtn.dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+chk('ledger ✕ removes the entry', !A.S.ledger.find(e => e.id === 'u-demo'));
+d.getElementById('undoBtn').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+chk('ledger ✕ undo restores the entry', !!A.S.ledger.find(e => e.id === 'u-demo'));
+
 /* ---------- 9. live totals while typing ---------- */
 console.log('\n=== live totals while typing ===');
 function type(sel, value) {
@@ -152,6 +183,8 @@ chk('move-in amount edits reach state', A.S.moveItems.find(i => i.id === 'adv').
 chk('cash total updates live', A.cashNow().remaining === baseCash.remaining + 1000,
   baseCash.remaining + ' -> ' + A.cashNow().remaining);
 chk('float updates live', A.cashNow().gap === baseCash.gap - 1000, baseCash.gap + ' -> ' + A.cashNow().gap);
+chk('on-screen total updates live', /₱19,700/.test(d.querySelector('#move tfoot td.num').textContent),
+  d.querySelector('#move tfoot td.num').textContent.trim());
 chk('focus stays in the edited field', d.activeElement && d.activeElement.dataset.mamt === 'adv',
   d.activeElement ? (d.activeElement.dataset.mamt || d.activeElement.tagName) : 'none');
 chk('typed text is preserved verbatim', d.querySelector('[data-mamt="adv"]').value === '8000');
@@ -164,6 +197,8 @@ chk('cleared field counts as 0 in totals', A.S.moveItems.find(i => i.id === 'adv
 A.S = A.defaults(); A.renderBudget();
 type('[data-bamt="' + A.S.budget[2].id + '"]', '1000');
 chk('budget edit updates unassigned live', A.budgetTotals().un === 1900, 'un=' + A.budgetTotals().un);
+chk('on-screen budget total updates live', /₱10,600/.test(d.querySelector('#budget tfoot td.num').textContent),
+  d.querySelector('#budget tfoot td.num').textContent.trim());
 chk('budget shows over/under warning live', /over-committed|has no job/.test(d.getElementById('budget').textContent));
 // income field drives everything
 A.S = A.defaults(); A.renderBudget();
@@ -197,6 +232,16 @@ A.renderDash();
 chk('ledger EF entry reaches the dashboard', /₱1,250/.test(d.getElementById('dash').textContent));
 A.S.budget[2].amt = 1000;
 chk('budget edit breaks zero-based balance', A.budgetTotals().un === 1900, 'un=' + A.budgetTotals().un);
+
+/* ---------- 11b. visual graphics are wired up ---------- */
+console.log('\n=== visual graphics ===');
+A.S = A.defaults(); A.renderDash(); A.renderMove(); A.renderBudget();
+chk('dashboard has the SVG cash-flow chart', !!d.querySelector('#dash svg.spark'));
+chk('dashboard has the debt progress ring', !!d.querySelector('#dash svg.ring'));
+chk('toggle switches render as switch widgets', d.querySelectorAll('#dash .toggle .sw').length === 8, 'switches=' + d.querySelectorAll('#dash .toggle .sw').length);
+chk('live-update badges render on editable cards', d.querySelectorAll('.live-pill').length >= 4, 'pills=' + d.querySelectorAll('.live-pill').length);
+chk('move-in toggles use the switch widget', d.querySelectorAll('#move .toggle .sw').length === 3, 'switches=' + d.querySelectorAll('#move .toggle .sw').length);
+chk('undo snackbar is present in the page', !!d.getElementById('undoBar'));
 
 /* ---------- 12. self-containment: the single file stands alone ---------- */
 console.log('\n=== single-file integrity ===');

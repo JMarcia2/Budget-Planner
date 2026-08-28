@@ -39,5 +39,23 @@ npm install
 npm test
 ```
 
-All 67 assertions should pass — they cover every tab, the zero-based presets, the
-forecast math, paid-item undo, live per-keystroke editing, and single-file integrity.
+All 87 assertions should pass — they cover every tab, the zero-based presets, the
+forecast math, paid-item undo, live per-keystroke editing, **undoable ✕ deletes**
+(budget lines and ledger entries via the on-screen Undo snackbar), the SVG charts
+and switch widgets, and single-file integrity.
+
+## Feature highlights
+
+- **Mark-as-paid → undo.** Every `paid` button flips into a `↩ undo` button on the
+  same row — on the Dashboard and the Move-In Plan — so a mis-tap costs nothing.
+- **Live totals while typing.** Every editable amount (move-in lines, budget
+  categories, income, debt paid, emergency-fund fields) updates every total,
+  %, chart and warning on the page on each keystroke. Changed stat tiles pulse
+  so you can see exactly what moved.
+- **Undoable ✕ delete in the Kinsenas Budget.** Removing a category (or deleting a
+  Ledger entry) drops a slide-in **Undo** snackbar. Click Undo to restore the line
+  at its original position and total; after 7 seconds the deletion sticks.
+- **Styled graphics.** Single-file design refresh: gradient glass cards, an SVG
+  area chart for the cash-flow forecast, a gradient debt-clearance ring, animated
+  toggles, shimmering progress bars, live-update badges, an SVG logo and a
+  polished undo snackbar — all inline, still zero external files.
